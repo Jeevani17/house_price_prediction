@@ -248,8 +248,8 @@ function calculateMockPrice(area, bhk, bathrooms, location) {
     let basePricePerSqft = 3000; // Default base price
     
     // Premium locations get higher base price
-    const premiumLocations = ['Koramangala', 'Indiranagar', 'Whitefield', 'Electronic City', 'HSR Layout', 'BTM Layout', 'Jayanagar', 'Malleshwaram', 'Rajajinagar'];
-    const midTierLocations = ['Banashankari', 'Basavanagudi', 'JP Nagar', 'Hebbal', 'Marathahalli', 'Bellandur'];
+    const premiumLocations = ['Koramangala', 'Indira Nagar', 'Whitefield', 'Electronic City', 'HSR Layout', 'BTM Layout', 'Jayanagar', 'Malleshwaram', 'Rajaji Nagar'];
+    const midTierLocations = ['Banashankari', 'Basavangudi', 'JP Nagar', 'Hebbal', 'Marathahalli', 'Bellandur'];
     
     if (premiumLocations.some(loc => location.toLowerCase().includes(loc.toLowerCase()))) {
         basePricePerSqft = 5000;
@@ -313,7 +313,13 @@ function showError(message) {
 function init() {
     console.log('Initializing application...');
     
-    // Clear and populate location dropdown
+    // Ensure locationSelect exists
+    if (!locationSelect) {
+        console.error('Location select element not found!');
+        return;
+    }
+    
+    // Clear existing options
     locationSelect.innerHTML = '';
     
     // Add default option
@@ -325,17 +331,30 @@ function init() {
     locationSelect.appendChild(defaultOption);
     
     // Add all Bangalore locations
-    bangaloreLocations.forEach(location => {
+    bangaloreLocations.forEach((location, index) => {
         const option = document.createElement('option');
         option.value = location;
         option.textContent = location;
         locationSelect.appendChild(option);
+        
+        // Log first few locations for debugging
+        if (index < 5) {
+            console.log(`Added location: ${location}`);
+        }
     });
     
-    console.log(`Loaded ${bangaloreLocations.length} locations`);
+    console.log(`Successfully loaded ${bangaloreLocations.length} locations`);
+    
+    // Verify the select has options
+    console.log(`Location select now has ${locationSelect.options.length} options`);
 
     // Add form submit handler
-    form.addEventListener('submit', handleFormSubmit);
+    if (form) {
+        form.addEventListener('submit', handleFormSubmit);
+        console.log('Form submit handler added');
+    } else {
+        console.error('Form element not found!');
+    }
 }
 
 // Handle form submission
@@ -396,14 +415,27 @@ async function handleFormSubmit(e) {
 }
 
 // Initialize the app when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, initializing app...');
-    init();
-});
-
-// Also initialize if DOM is already loaded
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-} else {
-    init();
+function initializeApp() {
+    console.log('DOM ready, initializing app...');
+    
+    // Wait a bit to ensure all elements are rendered
+    setTimeout(() => {
+        init();
+    }, 100);
 }
+
+// Multiple initialization strategies to ensure it works
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+    initializeApp();
+}
+
+// Fallback initialization
+window.addEventListener('load', function() {
+    console.log('Window loaded, checking if app is initialized...');
+    if (locationSelect && locationSelect.options.length <= 1) {
+        console.log('App not initialized, initializing now...');
+        init();
+    }
+});
