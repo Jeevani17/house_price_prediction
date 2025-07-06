@@ -1,12 +1,12 @@
-// Mock data for locations (since we don't have the backend running)
-const mockLocations = [
+// Bangalore locations from the model data
+const bangaloreLocations = [
     "1st Block Jayanagar",
-    "1st Phase JP Nagar",
+    "1st Phase JP Nagar", 
     "2nd Phase Judicial Layout",
     "2nd Stage Nagarbhavi",
     "5th Block HBR Layout",
     "5th Phase JP Nagar",
-    "6th Phase JP Nagar",
+    "6th Phase JP Nagar", 
     "7th Phase JP Nagar",
     "8th Phase JP Nagar",
     "9th Phase JP Nagar",
@@ -242,16 +242,30 @@ const mockLocations = [
     "Yeshwanthpur"
 ];
 
-// Mock price calculation function
+// Mock price calculation function with more realistic pricing
 function calculateMockPrice(area, bhk, bathrooms, location) {
-    // Simple mock calculation based on area and other factors
-    const basePrice = area * 0.05; // Base price per sq ft
-    const bhkMultiplier = bhk * 10;
-    const bathMultiplier = bathrooms * 5;
-    const locationMultiplier = Math.random() * 20 + 10; // Random location factor
+    // Base price per sq ft varies by location type
+    let basePricePerSqft = 3000; // Default base price
     
-    const totalPrice = basePrice + bhkMultiplier + bathMultiplier + locationMultiplier;
-    return Math.round(totalPrice * 100) / 100; // Round to 2 decimal places
+    // Premium locations get higher base price
+    const premiumLocations = ['Koramangala', 'Indiranagar', 'Whitefield', 'Electronic City', 'HSR Layout', 'BTM Layout', 'Jayanagar', 'Malleshwaram', 'Rajajinagar'];
+    const midTierLocations = ['Banashankari', 'Basavanagudi', 'JP Nagar', 'Hebbal', 'Marathahalli', 'Bellandur'];
+    
+    if (premiumLocations.some(loc => location.toLowerCase().includes(loc.toLowerCase()))) {
+        basePricePerSqft = 5000;
+    } else if (midTierLocations.some(loc => location.toLowerCase().includes(loc.toLowerCase()))) {
+        basePricePerSqft = 4000;
+    }
+    
+    // Calculate total price
+    const basePrice = area * basePricePerSqft;
+    const bhkMultiplier = 1 + (bhk - 1) * 0.1; // 10% increase per additional BHK
+    const bathMultiplier = 1 + (bathrooms - 1) * 0.05; // 5% increase per additional bathroom
+    
+    const totalPrice = basePrice * bhkMultiplier * bathMultiplier;
+    const priceInLakhs = totalPrice / 100000; // Convert to lakhs
+    
+    return Math.round(priceInLakhs * 100) / 100; // Round to 2 decimal places
 }
 
 // DOM elements
@@ -297,14 +311,28 @@ function showError(message) {
 
 // Initialize the application
 function init() {
-    // Populate location dropdown
-    locationSelect.innerHTML = '<option value="" disabled selected>Choose a Location</option>';
-    mockLocations.forEach(location => {
+    console.log('Initializing application...');
+    
+    // Clear and populate location dropdown
+    locationSelect.innerHTML = '';
+    
+    // Add default option
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.disabled = true;
+    defaultOption.selected = true;
+    defaultOption.textContent = 'Choose a Location';
+    locationSelect.appendChild(defaultOption);
+    
+    // Add all Bangalore locations
+    bangaloreLocations.forEach(location => {
         const option = document.createElement('option');
         option.value = location;
         option.textContent = location;
         locationSelect.appendChild(option);
     });
+    
+    console.log(`Loaded ${bangaloreLocations.length} locations`);
 
     // Add form submit handler
     form.addEventListener('submit', handleFormSubmit);
@@ -314,11 +342,15 @@ function init() {
 async function handleFormSubmit(e) {
     e.preventDefault();
     
+    console.log('Form submitted');
+    
     // Get form values
     const area = parseFloat(document.getElementById('area').value);
     const bhk = getSelectedRadioValue('bhk');
     const bathrooms = getSelectedRadioValue('bathrooms');
     const location = locationSelect.value;
+
+    console.log('Form values:', { area, bhk, bathrooms, location });
 
     // Validate inputs
     if (!area || area <= 0) {
@@ -327,7 +359,7 @@ async function handleFormSubmit(e) {
     }
 
     if (!bhk) {
-        showError('Please select number of bedrooms');
+        showError('Please select number of bedrooms (BHK)');
         return;
     }
 
@@ -346,14 +378,17 @@ async function handleFormSubmit(e) {
 
     try {
         // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         // Calculate mock price
         const estimatedPrice = calculateMockPrice(area, bhk, bathrooms, location);
         
+        console.log('Calculated price:', estimatedPrice);
+        
         // Show result
         showResult(estimatedPrice);
     } catch (error) {
+        console.error('Error calculating price:', error);
         showError('Failed to calculate price. Please try again.');
     } finally {
         hideLoading();
@@ -361,4 +396,14 @@ async function handleFormSubmit(e) {
 }
 
 // Initialize the app when DOM is loaded
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing app...');
+    init();
+});
+
+// Also initialize if DOM is already loaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
